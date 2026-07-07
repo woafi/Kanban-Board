@@ -10,7 +10,7 @@ Below is a summary of the changes we made and the step-by-step instructions you 
 
 1. **Production Dependencies Added**:
    - Created [requirements.txt](file:///c:/Users/Mohammad%20Woafi/Documents/Programming/Project/Webapp/Demo-Project/kanban/server/requirements.txt) and updated the local `Pipfile`/`Pipfile.lock`.
-   - Added `gunicorn` (production server), `whitenoise` (static file hosting), `dj-database-url` (parsing DATABASE_URL), and `psycopg2-binary` (PostgreSQL adapter).
+   - Added `gunicorn` (production server), `whitenoise` (static file hosting), `dj-database-url` (parsing DATABASE_URL), `psycopg2-binary` (PostgreSQL adapter), and `Pillow` (for handling `ImageField` models).
 
 2. **Python Runtime Specified**:
    - Created [runtime.txt](file:///c:/Users/Mohammad%20Woafi/Documents/Programming/Project/Webapp/Demo-Project/kanban/server/runtime.txt) specifying `python-3.11.9` to ensure Render spins up a stable Python environment.
@@ -22,7 +22,7 @@ Below is a summary of the changes we made and the step-by-step instructions you 
    - Modified [settings.py](file:///c:/Users/Mohammad%20Woafi/Documents/Programming/Project/Webapp/Demo-Project/kanban/server/mysite/mysite/settings.py):
      - **Secrets**: Reads `SECRET_KEY` and `DEBUG` status from environment variables.
      - **Allowed Hosts**: Automatically detects and registers Render's hostname (`RENDER_EXTERNAL_HOSTNAME`) in addition to local hosts.
-     - **CORS/CSRF**: Dynamically appends `FRONTEND_URL` environment variable if specified.
+     - **CORS/CSRF**: Dynamically appends `FRONTEND_URL` environment variable if specified, and automatically strips trailing slashes to prevent validation errors.
      - **Middleware**: Integrated WhiteNoise for high-performance serving of static files in production.
      - **Database**: Dynamically switches database settings to PostgreSQL when `DATABASE_URL` environment variable is defined (which Render sets for PostgreSQL instances), falling back to SQLite for local development.
      - **Static & Media Assets**: Configured static files compiling directories (`STATIC_ROOT`) and compression storage.
@@ -82,3 +82,24 @@ Before deploying, we must add the production environment variables so Django can
 - Render will automatically trigger a build once the service is saved.
 - You can watch the logs. Render will run `build.sh` (installing dependencies, applying migrations, compiling static files), and start the Gunicorn server.
 - Once the log shows **"Your service is live"**, your backend is up and running!
+
+---
+
+### Step 5: Create a Superuser (Admin Login)
+There are two ways to create a superuser for your deployed application so that you can log in to `/admin`:
+
+#### Option A: Manual creation via Render Web Shell (Recommended)
+1. Go to your Web Service in the Render Dashboard.
+2. In the left navigation menu, click on **Shell**.
+3. Run the following command:
+   ```bash
+   python mysite/manage.py createsuperuser
+   ```
+4. It will prompt you for an **Email** and **Password** (note: the username field is disabled on this custom User model, so it only asks for email). Type them in and press Enter.
+
+#### Option B: Automatic creation via Environment Variables
+1. Go to the **Environment** tab of your Web Service.
+2. Add the following environment variables:
+   - `DJANGO_SUPERUSER_EMAIL`: The email you want to use (e.g., `admin@example.com`).
+   - `DJANGO_SUPERUSER_PASSWORD`: A secure password.
+3. Save changes. On the next deployment, Render will automatically run the script to create this superuser (and will skip creation if it already exists).
